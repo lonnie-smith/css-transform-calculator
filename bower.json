@@ -1,0 +1,8 @@
+{
+  "name": "client-project",
+  "private": true,
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}
