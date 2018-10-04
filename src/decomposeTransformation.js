@@ -144,7 +144,7 @@ function _qrDecomposition(a, b, c, d, det) {
         ];
     } else { // a = b = c = d = 0
         return [
-            TransformMatrix.identity(),
+            TransformMatrix.fromScale(0, 0),
         ];
     }
 }

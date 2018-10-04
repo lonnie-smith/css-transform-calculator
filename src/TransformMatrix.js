@@ -75,7 +75,7 @@ class TransformMatrix {
             return 'identity';
         } else if (areNotZero([e, f]) && areOne([a, b]) && areZero([c, d])) {
             return 'translate';
-        } else if (areNotZero([a, d]) && areZero([b, c, e, f])) {
+        } else if (areZero([b, c, e, f])) {
             return 'scale';
         } else if (areOne([a, d]) && areNotZero([c]) && areZero([b, e, f])) {
             return 'skewX';
