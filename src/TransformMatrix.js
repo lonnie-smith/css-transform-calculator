@@ -277,15 +277,19 @@ class TransformMatrix {
 
     /**
      * Returns `true` if transformation appears to include a rotation or skew.
-     * @return {Boolean}
+     * @readonly
+     * @memberof TransformationMatrix
+     * @type {Boolean}
      */
-    isSkewedOrRotated() {
+    get isSkewedOrRotated() {
         return (this._values[1] !== 0 || this._values[2] !== 0);
     }
 
     /**
      * The inverse of this transform matrix.
-     * @return {TransformMatrix} new matrix
+     * @readonly
+     * @memberof TransformMatrix
+     * @type {TransformMatrix} new matrix
      */
     get inverse() {
         return invert(this);
