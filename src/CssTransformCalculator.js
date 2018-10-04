@@ -34,31 +34,32 @@ class CssTransformCalculator {
         this.el = el;
         this._matrixes = CssTransformCalculator
             .getTransformMatrixesBetween(el, baseAncestor);
-        this._invertedMatrixes = this._matrixes.map(CssTransformCalculator.invertMatrix);
+        this._composite = TransformMatrix.compose(this._matrixes);
+        this._inverse = this._composite.inverse;
     }
 
     /**
-     * From an Array [x, y], `coords`, relative to an untransformed coordinate
-     * space, find the equivalent coords [x1, y1] relative to the transformed
+     * From a point `x`, `y` relative to an untransformed coordinate
+     * space, find the equivalent coordinates relative to the transformed
      * element.
-     * @param {Array} coords - [x, y]
-     * @return {Array} - [x1, y1]
+     * @param {Number} x
+     * @param {Number} y
+     * @return {{x: Number, y: Number}}
      */
-    transformCoords(coords) {
-        return CssTransformCalculator
-            .compositeTransform(this._matrixes, coords);
+    transformPoint(x, y) {
+        return this._composite.transformPoint(x, y);
     }
 
     /**
      * From an Array [x1, y1], `coords`, relative to this transformed
      * element, find the equivalent coords [x, y] relative to the
      * untransformed space.
-     * @param {Array} coords - [x, y]
-     * @return {Array} - [x1, y1]
+     * @param {Number} x
+     * @param {Number} y
+     * @return {{x: Number, y: Number}}
      */
-    untransformCoords(coords) {
-        return CssTransformCalculator
-            .compositeTransform(this._invertedMatrixes, coords);
+    untransformPoint(x, y) {
+        return this._inverse.transformPoint(x, y);
     }
 
     /**
