@@ -2,8 +2,6 @@
  * Notify user of happenings with system notifications.
  */
 
-import gulp from 'gulp';
-import gulpIf from 'gulp-if';
 import plumber from 'gulp-plumber';
 import gutil from 'gulp-util';
 
