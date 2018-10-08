@@ -9,7 +9,8 @@
     "prod": "cross-env NODE_ENV=production gulp",
     "dev": "cross-env NODE_ENV=development gulp",
     "lint": "cross-env NODE_ENV=development gulp lint",
-    "postinstall": "node tools/npm-postinstall"
+    "postinstall": "node tools/npm-postinstall",
+    "test": "jasmine"
   },
   "dependencies": {
     "babel-polyfill": "6.9.1"
@@ -32,6 +33,7 @@
     "gulp-plumber": "^1.2.0",
     "gulp-sourcemaps": "1.6.0",
     "gulp-uglify": "1.5.4",
+    "jasmine": "^3.2.0",
     "run-sequence": "1.2.2",
     "vinyl-buffer": "^1.0.1",
     "vinyl-source-stream": "^2.0.0",

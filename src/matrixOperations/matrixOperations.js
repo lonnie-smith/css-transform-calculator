@@ -1,4 +1,4 @@
-import TransformMatrix from './TransformMatrix';
+import TransformMatrix from '../TransformMatrix';
 
 /**
  * Find the matrix vector product of TransformMatrix `matrix` and a 3-element
