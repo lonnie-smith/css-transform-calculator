@@ -8,9 +8,9 @@
   "main": "./dist/main.js",
   "scripts": {
     "prod": "cross-env NODE_ENV=production gulp",
-    "dev": "cross-env NODE_ENV=development gulp",
+    "dev": "cross-env NODE_ENV=development gulp test",
     "lint": "cross-env NODE_ENV=development gulp lint",
-    "test": "cross-env NODE_ENV=development gulp test"
+    "test": "cross-env NODE_ENV=production gulp test"
   },
   "dependencies": {
     "@babel/polyfill": "^7.0.0"
