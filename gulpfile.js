@@ -1,4 +1,4 @@
-require('babel-register')({ ignore: /node_modules|tools\/cache/ });
+require('@babel/register')({ ignore: [/node_modules|tools\/cache/] });
 require('browser-sync').create('local');
 require('env-merger')();
 

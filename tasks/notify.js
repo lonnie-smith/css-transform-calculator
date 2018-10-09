@@ -3,14 +3,16 @@
  */
 
 import plumber from 'gulp-plumber';
-import gutil from 'gulp-util';
+import log from 'fancy-log';
+import colors from 'ansi-colors';
+import beeper from 'beeper';
 
 class Notify {
     // By default, only logs if in watch mode
     // unless force = true
     log(title, message = '', force) {
         if (force || this.isWatch) {
-            gutil.log(title, message);
+            log(title, message);
         }
     }
 
@@ -25,10 +27,10 @@ class Notify {
             .filter(part => part != null)
             .join('\n');
 
-        gutil.log(gutil.colors.red(message));
+        log(colors.red(message));
 
         if (process.env.BEEP_ON_ERROR === 'true') {
-            gutil.beep();
+            beeper();
         }
     }
 
