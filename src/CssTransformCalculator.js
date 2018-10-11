@@ -81,6 +81,7 @@ class CssTransformCalculator {
         return this._compositeInverse.transformPoint(x, y);
     }
 
+    /* eslint-disable max-len */
     /**
      * `Element.getBoundingClientRect()` will provide the size and position of
      * an element relative to the viewport ... after it has been rendered with
@@ -91,6 +92,7 @@ class CssTransformCalculator {
      * @returns {{width: Number, height: Number, top: Number, right: Number, bottom: Number, left: Number}}
      * @memberof CssTransformCalculator
      */
+    /* eslint-enable max-len */
     getUntransformedBoundingClientRect() {
         const rect = this._el.getBoundingClientRect();
         const txfrm = this._compositeInverse;
