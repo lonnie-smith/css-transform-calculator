@@ -73,7 +73,7 @@ class TransformMatrix {
         const [a, b, c, d, e, f] = this._values;
         if (areOne([a, d]) && areZero([b, c, e, f])) {
             return 'identity';
-        } else if (areNotZero([e, f]) && areOne([a, b]) && areZero([c, d])) {
+        } else if (areNotZero([e, f]) && areOne([a, d]) && areZero([b, c])) {
             return 'translate';
         } else if (areZero([b, c, e, f])) {
             return 'scale';
@@ -250,7 +250,7 @@ class TransformMatrix {
         return new TransformMatrix(
             Math.cos(theta),
             Math.sin(theta),
-            Math.sin(-1 * theta),
+            -1 * Math.sin(theta),
             Math.cos(theta),
             0,
             0
