@@ -88,19 +88,19 @@ class TransformMatrix {
         }
 
         function areZero(arr) {
-            return arr.filter(((rslt, item) => rslt && item === 0), true);
+            return arr.reduce(((rslt, item) => rslt && item === 0), true);
         }
 
         function areOne(arr) {
-            return arr.filter(((rslt, item) => rslt && item === 1), true);
+            return arr.reduce(((rslt, item) => rslt && item === 1), true);
         }
 
         function areNotZero(arr) {
-            return arr.filter(((rslt, item) => rslt && item !== 0), true);
+            return arr.reduce(((rslt, item) => rslt && item !== 0), true);
         }
 
         function areSinCos(arr) {
-            return arr.filter(((rslt, item) => rslt && item >= -1 && item <= 1), true);
+            return arr.reduce(((rslt, item) => rslt && item >= -1 && item <= 1), true);
         }
     }
 
