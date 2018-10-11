@@ -3,7 +3,7 @@ import notify from './notify';
 import karma from 'karma';
 
 export default gulp.series('buildTests', test, done => {
-    process.env.watchStarted = true;
+    process.env.watchStarted = 'true';
     notify.log('Tests complete!',
         process.env.WATCH === 'true' ? 'Starting watch...' : '',
         true);

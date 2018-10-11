@@ -9,7 +9,7 @@ import gulp from 'gulp';
 import notify from './notify';
 
 export default gulp.series('clean', 'scripts', done => {
-    process.env.watchStarted = true;
+    process.env.watchStarted = 'true';
     notify.log(
         'Build complete!',
         process.env.WATCH === 'true' ? 'Starting watch...' : '',
