@@ -37,6 +37,7 @@ function test(done) {
         logLevel: karma.constants.LOG_INFO,
 
         autoWatch: process.env.WATCH === 'true',
+        autoWatchBatchDelay: 500,
 
         // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
         browsers,
