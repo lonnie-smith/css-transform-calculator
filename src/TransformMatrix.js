@@ -1,4 +1,4 @@
-import decomposeTransformation from './decomposeTransformation';
+import decomposeTransformation from './decomposeTransformation/decomposeTransformation';
 import { invert, matrixVectorProduct, dotProduct } from './matrixOperations/matrixOperations';
 
 /**
