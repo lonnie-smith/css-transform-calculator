@@ -1,5 +1,6 @@
 /**
- * Builds JavaScript files found in /src/assets/scripts
+ * Builds JavaScript files found in /src.
+ *
  * Uses watchify for fast incremental builds
  *
  * @usage gulp scripts
@@ -18,6 +19,14 @@ import watchify from 'watchify';
 
 const plugins = [];
 const vendorArray = [...Object.keys(pkg.browser), ...Object.keys(pkg.dependencies)];
+
+export default function scripts() {
+    if (process.env.WATCH === 'true') {
+        plugins.push(watchify);
+    }
+
+    return buildScripts();
+}
 
 function onUpdate(bundler) {
     return bundler
@@ -60,11 +69,3 @@ function buildScripts() {
     return onUpdate(bundler);
 }
 
-
-export default function scripts() {
-    if (process.env.WATCH === 'true') {
-        plugins.push(watchify);
-    }
-
-    return buildScripts();
-}

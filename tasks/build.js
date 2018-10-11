@@ -1,5 +1,5 @@
 /**
- * Builds all source code in /src, and outputs to /web
+ * Builds all source code in /src, and outputs to /dist
  *
  * @usage gulp
  */
@@ -7,13 +7,6 @@
 import del from 'del';
 import gulp from 'gulp';
 import notify from './notify';
-
-function clean() {
-    return del(process.env.DIRECTORY_DEST, {
-        force: process.env.ENABLE_UNSAFE_CLEAN === 'true',
-    });
-}
-gulp.task('clean', clean);
 
 export default gulp.series('clean', 'scripts', done => {
     process.env.watchStarted = true;
@@ -25,3 +18,9 @@ export default gulp.series('clean', 'scripts', done => {
     done();
 });
 
+function clean() {
+    return del(process.env.DIRECTORY_DEST, {
+        force: process.env.ENABLE_UNSAFE_CLEAN === 'true',
+    });
+}
+gulp.task('clean', clean);

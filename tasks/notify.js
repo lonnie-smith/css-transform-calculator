@@ -16,7 +16,7 @@ class Notify {
         }
     }
 
-    onLog(title, message = '', force) {
+    onLog(title, message = '') {
         return () => {
             this.log(title, message);
         };
