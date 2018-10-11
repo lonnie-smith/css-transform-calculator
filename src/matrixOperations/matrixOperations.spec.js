@@ -1,5 +1,5 @@
 import { matrixVectorProduct, dotProduct, invert } from './matrixOperations';
-import TransformMatrix from '../TransformMatrix';
+import TransformMatrix from '../TransformMatrix/TransformMatrix';
 
 describe('matrixVectorProduct', () => {
     const I = TransformMatrix.identity();

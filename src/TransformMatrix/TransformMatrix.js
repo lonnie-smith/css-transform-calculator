@@ -1,5 +1,5 @@
-import decomposeTransformation from './decomposeTransformation/decomposeTransformation';
-import { invert, matrixVectorProduct, dotProduct } from './matrixOperations/matrixOperations';
+import decomposeTransformation from '../decomposeTransformation/decomposeTransformation';
+import { invert, matrixVectorProduct, dotProduct } from '../matrixOperations/matrixOperations';
 
 /**
  * Represents a 2D affine transformation of one of the varieties supported by

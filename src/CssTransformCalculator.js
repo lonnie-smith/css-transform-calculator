@@ -1,5 +1,5 @@
 import '@babel/polyfill';
-import TransformMatrix from './TransformMatrix';
+import TransformMatrix from './TransformMatrix/TransformMatrix';
 
 /**
  * Frequently, we need to obtain coordinates of a point relative to an
@@ -304,7 +304,9 @@ class CssTransformCalculator {
      * @type {TransformMatrix}
      */
     get _compositeInverseScale() {
-        if (this.__compositeInverseScale) { return this.this.__compositeInverseScale; }
+        if (this.__compositeInverseScale) {
+            return this.__compositeInverseScale;
+        }
         this.__compositeInverseScale = this._compositeScale.inverse;
         return this.__compositeInverseScale;
     }

@@ -1,4 +1,4 @@
-import TransformMatrix from '../TransformMatrix';
+import TransformMatrix from '../TransformMatrix/TransformMatrix';
 
 /**
  * Finds a decomposition of the transform matrix `matrix` into some set of

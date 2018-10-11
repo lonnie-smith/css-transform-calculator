@@ -1,4 +1,4 @@
-import TransformMatrix from '../TransformMatrix';
+import TransformMatrix from '../TransformMatrix/TransformMatrix';
 
 /**
  * Find the matrix vector product of TransformMatrix `matrix` and a 3-element
@@ -26,7 +26,6 @@ export function matrixVectorProduct(matrix1, vector) {
 export function dotProduct(matrix1, matrix2) {
     const M1 = matrix1.matrix;
     const M2 = matrix2.matrix;
-    const type = matrix1.type === matrix2.type ? matrix1.type : 'composite';
 
     // column vectors of M2
     const M2t = [
@@ -39,7 +38,7 @@ export function dotProduct(matrix1, matrix2) {
         M2t.map(col => product(row, col))
     );
 
-    return TransformMatrix.fromArray(rslt, type);
+    return TransformMatrix.fromArray(rslt);
 
     function product(v1, v2) {
         return v1.reduce(((sum, a, i) => sum + (a * v2[i])), 0);
@@ -127,5 +126,5 @@ export function invert(matrix1) {
 
     // we've done all operations, C should be the identity
     // matrix I should be the inverse
-    return TransformMatrix.fromArray(I, matrix1.type);
+    return TransformMatrix.fromArray(I);
 }

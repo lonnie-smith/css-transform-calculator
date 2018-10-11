@@ -1,4 +1,4 @@
-import TransformMatrix from '../TransformMatrix';
+import TransformMatrix from '../TransformMatrix/TransformMatrix';
 import decompose from './decomposeTransformation';
 
 describe('decomposeTransformation', () => {
@@ -15,6 +15,4 @@ describe('decomposeTransformation', () => {
     //     expect(decomp.length).toBe(1);
     //     expect(decomp[1].cssVector).toEqual(scaleMatrix.cssVector);
     // });
-
-
 });
