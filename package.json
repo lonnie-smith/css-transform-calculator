@@ -5,6 +5,10 @@
   "developedBy": "Lonnie Smith",
   "private": false,
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lonnie-smith/css-transform-calculator.git"
+  },
   "main": "./dist/main.js",
   "scripts": {
     "dist": "cross-env NODE_ENV=production gulp build",
