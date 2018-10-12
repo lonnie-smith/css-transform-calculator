@@ -74,9 +74,9 @@ export default function decomposeTransformation(matrix) {
         return matrixes.reduce(reducer, 0);
         function reducer(size, m) {
             if (m.type === 'skewX') {
-                return size + Math.abs(m.values[2]);
+                return size + Math.abs(m.cssVector[2]);
             } else if (m.type === 'skewY') {
-                return size + Math.abs(m.values[1]);
+                return size + Math.abs(m.cssVector[1]);
             }
             return size;
         }
