@@ -1,85 +1,66 @@
-# CLIENT.Project
+# CSS Transform Calculator
 
-This document describes the Front-end build process.
+If you're using CSS transforms in your project, you often run into situations
+where you need to map coordinates from a "base" coordinate space (e.g., pixel
+offsets relative to the viewport) to a transfomed coordinate space (e.g., pixel
+offsets relative to some DOM element that has been moved around using CSS
+transforms), or vice versa.
 
-The following tools are used:
+For example:
 
- * Build - Node 6.5.0, Gulp
- * Packages - Npm, Bower
- * Docs - YuiDocs
- * JavaScript - Browserify, Babelify, Uglify, ESLint
- * Stylesheets - PostCSS, CSSNext, CSSClean
- * HTML - Handlebars
- * Images - ImageMin
+- You are tracking the position of the pointer using mouse/touch/pointer events,
+  but you need to know where the cursor is relative to a transformed element.
+- You have the position of an element within the viewport using
+  `element.getBoundingClientRect()`, but you need to know where the element
+  was before transformations were applied.
+- You want to know where an element (or a point within the element) will be
+  after a series of transformations are applied or after they are removed. This
+  could be handy, for example, if you’re optimizing transition animations using
+  the [FLIP technique](https://css-tricks.com/animating-layouts-with-the-flip-technique/)
 
-## Prereqs
+Calculating the coordinates you need is usually pretty simple, but it can
+quickly get out of hand when:
 
-Install the required version of Node.js:
+- Transforms have been applied to ancestors of the element you care about, or,
+  worse, transforms have been applied to _multiple_ ancestors of that element.
+- Transforms are applied dynamically, and you don't have a convenient way to
+  know what they are.
+- You're writing a reusable component and you don't know ahead of time what
+  transforms may be applied when it is used in somebody else's project.
+- A complex transformation has been been applied to an element—e.g.
+  `transform: rotate(20deg) scale(1.2) translate(20px, 50px)`
+- You’re not sure what to do with the matrix notation that’s returned from
+  `window.getComputedStyle(element).transform` (for the transform above, you’d
+  get `"matrix(1.12763, 0.410424, -0.410424, 1.12763, 2.03141, 64.59)"`)
 
-    Mac/Linux: $ chmod 770 node-install.sh && ./node-install.sh -i
-    Windows: $ node-install.cmd -i
+## Installing
 
-## Development Build
+## API
 
-Builds source code from /src into /web. Starts a watch on files in /src.
+### Creating an instance
 
-    $ npm install
-    $ npm run dev
+```js
+new CSSTransformCalculator(myElement, options)
+```
 
-## Production Build
+or should this be CssTransformCalculator.fromElement(myElement, options)?
 
-Minifies all code. Skips installing optionalDependencies in package.json.
+... to allow for CssTransformCalculator.fromCssFunction('scale(1.5, 3)')
 
-    $ npm install --no-optional
-    $ npm run prod
+#### Options
 
-## Local Server
+- baseAncestor
+- includeHostFrames
+- ignoreShadowDom
 
-Starts a BrowserSync development server @ http://localhost:3000
+### Transforming coordinates
 
-    $ npm run serve
+### Finding a ClientRect
 
-## Image Optimization
+### Scaling and unscaling coordinates
 
-Optimize GIF/PNG/JPG/SVG images. Images are losslessly compressed, and will replace the original versions.
+### Translating and untranslating coordinates
 
-    $ npm run optimize
+## Examples
 
-## Documentation
-
-Generates documentation based on JavaScript docblocks, writes to /docs.
-
-    $ npm run docs
-
-## Linting
-
-Lints all JavaScript files for syntax issues.
-
-    $ npm run lint
-
-## Build Configuration
-
-Vary build options based on the target environment:
-
- * env/default.env - base configuration.
- * env/development.env - overrides for dev environment
- * env/local.env - overrides for local environment. This is for your personal use only, do not commit this file.
-
-## JavaScipt Bundles
-
-Two separate bundles are created for JavaScript:
-
- * main.js - built from our own code in /src/assets/scripts
- * vendor.js - built from third-party libs in /src/assets/vendor
-
-## Third-Party Libraries
-
-Use npm whenever possible to install third party libraries. Add a new entry in package.json, under "dependencies"
-
-If a library you want to use is NOT hosted in npm, do the following:
-
- 1. Add an entry to the file bower.json
- 1. Run `bower install` to download the library to /assets/vendor
- 1. Add an alias for the library in package.json under "browser"
- 1. If the library is not CommonJS-compatible, add an entry to "browserify-shim"
- 1. Please commit all libraries in /assets/vendor to source control
+## Contributing
