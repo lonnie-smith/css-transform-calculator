@@ -93,9 +93,34 @@ class CssTransformCalculator {
      * @memberof CssTransformCalculator
      */
     /* eslint-enable max-len */
+    getTransformedBoundingClientRect(el) {
+        // TODO: this won't actually work, since _compositeTransform is an
+        // instance property calculated from already-applied transforms.
+        throw new Error('not implemented');
+        // const rect = this._el.getBoundingClientRect();
+        // const txfrm = this._compositeTransform;
+        // return CssTransformCalculator._transformRect(rect, txfrm);
+    }
+
+    /* eslint-disable max-len */
+    /**
+     * `Element.getBoundingClientRect()` will provide the size and position of
+     * an element relative to the viewport ... after it has been rendered with
+     * CSS transforms applied. If you'd like to know what the boundingClientRect
+     * would have been `before` this element (and any of its ancestors) were
+     * transformed, this method will tell you.
+     *
+     * @returns {{width: Number, height: Number, top: Number, right: Number, bottom: Number, left: Number}}
+     * @memberof CssTransformCalculator
+     */
+    /* eslint-enable max-len */
     getUntransformedBoundingClientRect() {
         const rect = this._el.getBoundingClientRect();
         const txfrm = this._compositeInverse;
+        return CssTransformCalculator._transformRect(rect, txfrm);
+    }
+
+    static _transformRect(rect, txfrm) {
         const origin = txfrm.transformPoint(rect.left, rect.top);
         const edge = txfrm.transformPoint(rect.right, rect.bottom);
         return {
