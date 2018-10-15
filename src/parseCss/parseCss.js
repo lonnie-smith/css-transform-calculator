@@ -1,12 +1,13 @@
 import TransformMatrix from '../TransformMatrix/TransformMatrix';
 
-const DECIMAL = '[-+]?((\d?\.\d+)|(\d+))';
-const UNIT_ARG = `\s*${DECIMAL}\w+\s*`;
-const UNITLESS_ARG = `\s*${DECIMAL}\s*`;
+const DECIMAL = '[-+]?((\\d?\\.\\d+)|(\\d+))';
+const UNIT_ARG = `\\s*${DECIMAL}\\w+\\s*`;
+const UNITLESS_ARG = `\\s*${DECIMAL}\\s*`;
 
 const THREED_FUNCTIONS = 'matrix3d|perspective|rotate3d|rotatex|rotatey|rotatez|scale3d|scalez|translate3d|translatez';
 
 const UNIT_RX = {
+    UNITLESS: new RegExp(`^${DECIMAL}$`),
     PX: new RegExp(`${DECIMAL}px`),
     DEG: new RegExp(`${DECIMAL}deg`),
     RAD: new RegExp(`${DECIMAL}rad`),
@@ -16,19 +17,19 @@ const UNIT_RX = {
 
 const FUNCTION_RX = {
     FUNCTIONS: /\w+\(.*?\)/gm,
-    IS_THREED: new RegExp(`(${THREED_FUNCTIONS})\(`),
-    MATRIX: new RegExp(`matrix\((${UNITLESS_ARG},){5}${UNITLESS_ARG}\)`),
-    TRANSLATE_X: new RegExp(`translatex\(${UNIT_ARG}\)`),
-    TRANSLATE_Y: new RegExp(`translatey\(${UNIT_ARG}\)`),
-    TRANSLATE: new RegExp(`translate\(${UNIT_ARG},${UNIT_ARG}\)`),
-    SCALE_X: new RegExp(`scalex\(${UNITLESS_ARG}\)`),
-    SCALE_Y: new RegExp(`scaley\(${UNITLESS_ARG}\)`),
-    SCALE_UNIFORM: new RegExp(`scale\(${UNITLESS_ARG}\)`),
-    SCALE_NONUNIFORM: new RegExp(`scale\(${UNITLESS_ARG},${UNITLESS_ARG}\)`),
-    ROTATE: new RegExp(`rotate\(${UNIT_ARG}\)`),
-    SKEW_X: new RegExp(`(skewx\(${UNIT_ARG}\))|(skew\(${UNIT_ARG}\))`),
-    SKEW_Y: new RegExp(`skewy\(${UNIT_ARG}\)`),
-    SKEW_BOTH: new RegExp(`skew\(${UNIT_ARG},${UNIT_ARG}\)`),
+    IS_THREED: new RegExp(`(${THREED_FUNCTIONS})\\(`),
+    MATRIX: new RegExp(`matrix\\((${UNITLESS_ARG},){5}${UNITLESS_ARG}\\)`),
+    TRANSLATE_X: new RegExp(`(translatex\\(${UNIT_ARG}\\))|(translate\\(${UNIT_ARG}\\))`),
+    TRANSLATE_Y: new RegExp(`translatey\\(${UNIT_ARG}\\)`),
+    TRANSLATE: new RegExp(`translate\\(${UNIT_ARG},${UNIT_ARG}\\)`),
+    SCALE_X: new RegExp(`scalex\\(${UNITLESS_ARG}\\)`),
+    SCALE_Y: new RegExp(`scaley\\(${UNITLESS_ARG}\\)`),
+    SCALE_UNIFORM: new RegExp(`scale\\(${UNITLESS_ARG}\\)`),
+    SCALE_NONUNIFORM: new RegExp(`scale\\(${UNITLESS_ARG},${UNITLESS_ARG}\\)`),
+    ROTATE: new RegExp(`rotate\\(${UNIT_ARG}\\)`),
+    SKEW_X: new RegExp(`(skewx\\(${UNIT_ARG}\\))|(skew\\(${UNIT_ARG}\\))`),
+    SKEW_Y: new RegExp(`skewy\\(${UNIT_ARG}\\)`),
+    SKEW_BOTH: new RegExp(`skew\\(${UNIT_ARG},${UNIT_ARG}\\)`),
 };
 
 
@@ -75,6 +76,117 @@ export default function parseCss(func, safe3D) {
     });
     return matrixes;
 };
+
+export function _parseFunctions(str) {
+    let atEndFunc = false;
+    let betweenFuncs = true;
+    let inFuncName = false;
+    let inFuncBody = false;
+    const funcs = [];
+    let thisFunc = null;
+    let thisChar = null;
+    const err = new Error('Invalid CSS transform string');
+    for (let i = 0; i < str.length; i++) {
+        thisChar = str[i];
+        if (betweenFuncs) {
+            if (thisChar.search(/\w/) === 0) {
+                thisFunc = [thisChar];
+                betweenFuncs = false;
+                inFuncName = true;
+            } else if (thisChar !== ' ') {
+                throw err;
+            }
+        } else if (inFuncName) {
+            if (thisChar.search(/\w/) === 0) {
+                thisFunc.push(thisChar);
+            } else if (thisChar === '(') {
+                thisFunc.push(thisChar);
+                inFuncName = false;
+                inFuncBody = true;
+            } else {
+                throw err;
+            }
+        } else if (inFuncBody) {
+            thisFunc.push(thisChar);
+            if (thisChar === ')') {
+                funcs.push(thisFunc.join(''));
+                inFuncBody = false;
+                atEndFunc = true;
+            }
+        } else if (atEndFunc) {
+            if (thisChar === ' ') {
+                betweenFuncs = true;
+                atEndFunc = false;
+            } else {
+                throw err;
+            }
+        }
+    }
+    if (!betweenFuncs && !atEndFunc) {
+        throw err;
+    }
+    return funcs;
+}
+
+export function _parseArgs(str, type) {
+    const arr = str.trim()
+        .replace(/^\w+\(/, '')
+        .replace(/\)$/, '')
+        .split(/,/g)
+        .map(s => s.trim());
+    switch (type) {
+        case 'length':
+            return arr.map(x => _getPx(x));
+        case 'angle':
+            return arr.map(x => _getAngle(x));
+        default:
+            return arr.map(x => _getUnitless(x));
+    }
+}
+
+function _getUnitless(str) {
+    let val = null;
+    if (UNIT_RX.UNITLESS.test(str)) {
+        val = parseFloat(str);
+    }
+    if (val == null || isNaN(val)) {
+        throw new Error('Invalid argument');
+    }
+    return val;
+}
+
+function _getPx(str) {
+    if (!(UNIT_RX.PX.test(str))) {
+        throw new Error('Length units must be provided in px');
+    }
+    const px = parseFloat(str);
+    if (isNaN(px)) {
+        throw new Error('Invalid unit length');
+    }
+    return px;
+}
+
+function _getAngle(str) {
+    let rad;
+    if (UNIT_RX.DEG.test(str)) {
+        const deg = parseFloat(str);
+        rad = deg * (Math.PI / 180);
+    } else if (UNIT_RX.TURN.test(str)) {
+        const turn = parseFloat(str);
+        rad = turn * Math.PI * 2;
+    } else if (UNIT_RX.RAD.test(str)) {
+        rad = parseFloat(str);
+    } else if (UNIT_RX.GRAD.test(str)) {
+        const grad = parseFloat(str);
+        rad = grad * (Math.PI / 200);
+    } else {
+        throw new Error('Angle units are not correctly specified; see https://developer.mozilla.org/en-US/docs/Web/CSS/angle');
+    }
+    if (isNaN(rad)) {
+        throw new Error('Invalid angle');
+    }
+    return rad;
+}
 
 export function _matrix(str) {
     if (FUNCTION_RX.MATRIX.test(str)) {
@@ -131,83 +243,3 @@ export function _skew(str) {
     }
 }
 
-export function _parseFunctions(str) {
-    let betweenFuncs = true;
-    let inFuncName = false;
-    let inFuncBody = false;
-    const funcs = [];
-    let thisFunc = null;
-    let thisChar = null;
-    const err = new Error('Invalid CSS transform string');
-    for (let i = 0; i < str.length; i++) {
-        thisChar = str[i];
-        if (betweenFuncs) {
-            if (thisChar.search(/\w/) === 0) {
-                thisFunc = [thisChar];
-                betweenFuncs = false;
-                inFuncName = true;
-            } else if (thisChar !== ' ') {
-                throw err;
-            }
-        } else if (inFuncName) {
-            if (thisChar.search(/\w/) === 0) {
-                thisFunc.push(thisChar);
-            } else if (thisChar === '(') {
-                thisFunc.push(thisChar);
-                inFuncName = false;
-                inFuncBody = true;
-            } else {
-                throw err;
-            }
-        } else if (inFuncBody) {
-            thisFunc.push(thisChar);
-            if (thisChar === ')') {
-                funcs.push(thisFunc.join());
-                betweenFuncs = true;
-                inFuncBody = false;
-            }
-        }
-    }
-    if (!betweenFuncs) {
-        throw err;
-    }
-    return funcs;
-}
-
-export function _parseArgs(str, type) {
-    const arr = str.replace(/^\w+\(/, '')
-        .replace(/\)$/)
-        .split(/,/g)
-        .map(s => s.trim());
-    switch (type) {
-        case 'length':
-            return arr.map(x => _getPx(x));
-        case 'angle':
-            return arr.map(x => _getAngle(x));
-        default:
-            return arr.map(x => parseFloat(x));
-    }
-}
-
-export function _getPx(str) {
-    if (!(UNIT_RX.PX.test(str))) {
-        throw new Error('Length units must be provided in px');
-    }
-    return parseFloat(str);
-}
-
-export function _getAngle(str) {
-    if (UNIT_RX.DEG.test(str)) {
-        const deg = parseFloat(str);
-        return deg * (Math.PI / 180);
-    } else if (UNIT_RX.TURN.test(str)) {
-        const turn = parseFloat(str);
-        return turn * Math.PI * 2;
-    } else if (UNIT_RX.RAD.test(str)) {
-        return parseFloat(str);
-    } else if (UNIT_RX.GRAD.test(str)) {
-        const grad = parseFloat(str);
-        return grad * (Math.PI / 200);
-    }
-    throw new Error('Angle units are not correctly specified; see https://developer.mozilla.org/en-US/docs/Web/CSS/angle');
-}
