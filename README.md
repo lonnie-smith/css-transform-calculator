@@ -33,6 +33,15 @@ quickly get out of hand when:
   `window.getComputedStyle(element).transform` (for the transform above, you’d
   get `"matrix(1.12763, 0.410424, -0.410424, 1.12763, 2.03141, 64.59)"`)
 
+The CSS Transform Calculator makes it easier to deal with this kind of situation
+by analyzing the DOM structure and handling the math involved in applying
+multiple 2D transforms.
+
+## Important limitations
+
+1. Currently, the CSS transform calculator only handles 2D transforms.
+2. I’ve found it particularly useful to be able to treat scale transforms independently of other transformation functions. So the calculator includes methods to scale and unscale points. However, these methods may return inaccurate results when the element or any one of its ancestors has a `scale()` transform applied at the same time as a `rotate()`, `skewX()`, or `skewY()` transform.
+
 ## Installing
 
 ## API

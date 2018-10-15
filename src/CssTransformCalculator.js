@@ -2,18 +2,6 @@ import '@babel/polyfill';
 import TransformMatrix from './TransformMatrix/TransformMatrix';
 
 /**
- * Frequently, we need to obtain coordinates of a point relative to an
- * element which has had 2D transforms applied to it. This is a nontrivial
- * process due to the fact that `window.getComputedStyle` returns the
- * matrix() function rather than the individual translate(), scale(),
- * rotate() and skew() tranformation functions, and because multiple
- * transformations may be applied to various ancestors of a given element.
- *
- * This utility class implements the math necessary to obtain the matrix
- * transforms of a given element, invert those transformations, and, if
- * multiple different 2D transformations have been applied, decompose those
- * transformations so you can apply (or invert) just some of them.
- *
  * A CssTransformCalculator calculates the matrixes it needs to effeciently find
  * transformed coordinates as soon as it is created. If some elements in the
  * DOM are transformed dynamically after this element is created, it will
@@ -23,10 +11,13 @@ import TransformMatrix from './TransformMatrix/TransformMatrix';
  */
 class CssTransformCalculator {
     /**
-     * Create a new CssTransformCalculator instance. It will only pay attention
-     * to transforms in the elements in the path between `baseAncestor`
-     * and `el`. If `baseAncestor` is undefined, pay attention to all
-     * ancestors of `el` up to the `<body>` element.
+     * Create a new CssTransformCalculator instance. The calculator will inspect
+     * the DOM structure, taking into account the CSS transforms applied to
+     * the target element `el` and all of its ancestors up to
+     * `options.baseAncestor` (inclusive).
+     *
+     * @static
+     * @memberof CssTransformCalculator
      * @param {HTMLElement} el - target element
      * @param {Object} options
      * @param {HTMLElement} [options.baseAncestor] - CssTransformCalculator,
@@ -34,6 +25,19 @@ class CssTransformCalculator {
      *  traversing up the DOM tree, `baseAncestor`, including transforms on both
      *  `el` and `baseAncestor`. If not provided, calculator will include all
      *  ancestors all the way up to the root of the DOM tree.
+     * @param {boolean} [options.safe3D] - The calculator will return incorrect
+     *  results if 3D transforms are in use on any element in the path
+     *  between `options.baseAncestor` and `el`. By default, a warning will be
+     *  emitted on the console when 3D transforms are detected. If you set the
+     *  `safe3D` option to `true`, an error will be thrown instead.
+     * @param {boolean} [options.safeScale] - The CSS transform calculator
+     *  cannot always return accurate results for the `scalePoint()` or
+     *  `unscalePoint()` methods on an element when the `scale()` transform
+     *  has been applied at the same time as the rotate(), skewX(), or skewY()
+     *  transform on an element in the path between `options.baseAncestor` and
+     *  `el`. By default, the calculator emits a console warning when the
+     *  of `scalePoint()` or `unscalePoint()` may be inaccurate. If you set the
+     *  `safeScale` option to `true`, an error will be thrown instead.
      * @param {boolean} [options.includeHostFrames] - Useful when the parent
      *  document of `el` is hosted inside an iframe. When this option is `true`,
      *  the calculator will attempt to include transforms applied to the hosting
@@ -47,15 +51,96 @@ class CssTransformCalculator {
      *  structured. If you specifically want to ignore when `el` or its
      *  ancestors are distruted into any shadow DOM trees, set this option to
      *  `true`.
+     * @returns {CssTransformCalculator}
      */
-    constructor(el, options) {
-        this._options = options;
-        this._el = el;
+    static fromElement(el, options) {
+        const calc = new CssTransformCalculator();
+        calc._options = Object.assign({}, options, {
+            fromElement: true,
+            fromTransform: false,
+        });
+        calc._el = el;
+        calc._scaleWarning = false;
+        return calc;
+    }
 
-        // If rotate(), skewX(), skewY(), or matrix() functions are used in
-        // certain ways, it can cause some scale calculations to be inaccurate.
-        // We use this flag to issue a warning when this condition exists.
-        this._scaleWarning = false;
+    /**
+     * Create a new CssTransformCalculator instance. The instance will perform
+     * calculators based on the provided `transformFunc`, a String representing
+     * a valid CSS 2D transform; see see
+     * (syntax)[https://developer.mozilla.org/en-US/docs/Web/CSS/transform].
+     *
+     * Example: "rotate(30deg) scale(1.25) translateX(100px)"
+     *
+     * Note: the provided transformation function must specify lengths in px
+     * units.
+     *
+     * @static
+     * @param {String} transformFunc - a String representing a valid CSS 2D
+     * transform;
+     * @param {Object} options
+     * @param {boolean} [options.safe3D] - The calculator will return incorrect
+     *  results if 3D transforms are in use on any element in the path
+     *  between `options.baseAncestor` and `el`. By default, a warning will be
+     *  emitted on the console when 3D transforms are detected. If you set the
+     *  `safe3D` option to `true`, an error will be thrown instead.
+     * @param {boolean} [options.safeScale] - The CSS transform calculator
+     *  cannot always return accurate results for the `scalePoint()` or
+     *  `unscalePoint()` methods on an element when the `scale()` transform
+     *  has been applied at the same time as the rotate(), skewX(), or skewY()
+     *  transform on an element in the path between `options.baseAncestor` and
+     *  `el`. By default, the calculator emits a console warning when the
+     *  of `scalePoint()` or `unscalePoint()` may be inaccurate. If you set the
+     *  `safeScale` option to `true`, an error will be thrown instead.
+     * @returns {CssTransformCalculator}
+     * @memberof CssTransformCalculator
+     */
+    static fromTransform(transformFunc, options) {
+        const calc = new CssTransformCalculator();
+        calc._options = Object.assign({}, options, {
+            fromElement: false,
+            fromTransform: true,
+        });
+        calc._transformFunc = transformFunc;
+        calc._scaleWarning = false;
+        return calc;
+    }
+
+    get _options() {
+        return this.__options;
+    }
+
+    set _options(options) {
+        this.__options = options;
+    }
+
+    get _el() {
+        return this.__el;
+    }
+
+    set _el(el) {
+        this.__el = el;
+    }
+
+    /*
+    * If rotate(), skewX(), skewY(), or matrix() functions are used in
+    * certain ways, it can cause some scale calculations to be inaccurate.
+    * We use this flag to issue a warning when this condition exists.
+    */
+    get _scaleWarning() {
+        return this.__scaleWarning;
+    }
+
+    set _scaleWarning(bool) {
+        this.__scaleWarning = bool;
+    }
+
+    get _transformFunc() {
+        return this.__transformFunc;
+    }
+
+    set _transformFunc(func) {
+        this.__transformFunc = func;
     }
 
     /**
@@ -158,7 +243,11 @@ class CssTransformCalculator {
     }
 
     /**
-      * Traverses the DOM up from `el` to `baseAncestor` (including both `el`
+      * Returns an array of TransformMatrixes that will be used to perform
+      * calculations.
+      *
+      * If this calculator has been created based on an element, traverses the
+      * DOM up from `el` to `baseAncestor` (including both `el`
       * and `baseAncestor`) and creates an array of TransformMatrixes
       * currently applied to all elements in the path. If any "composite"
       * transforms are applied to an element in the path (i.e., a CSS transform
@@ -166,13 +255,50 @@ class CssTransformCalculator {
       * e.g. "transform: scale(2) rotate(45deg);" or a matrix() function that
       * cannot be interpreted as a simple transformation), these composite
       * transformations will be decomposed.
+      *
+      * If this calculator has been created based on a CSS transform function,
+      * uses the DOM to convert the input function to a matrix() transform,
+      * then decomposes the transform if necessary.
+      *
       * @readonly
       * @memberof CssTransformCalculator
       * @type {Array<TransformMatrix>}
       */
     get _transforms() {
         if (this.__transforms) { return this.__transforms; }
-        this._scaleWarning = false;
+        if (this._options.fromTransform) {
+            return this._convertTransformFunction();
+        } else if (this._options.fromElement) {
+            return this._traverseDom();
+        } else {
+            throw new Error('Cannot perform calculations using this CssTransformCalculator; please instantiate via CssTransformCalculator.fromElement or CssTransformCalculator.fromTransform');
+        }
+    }
+
+    /**
+     * Helper method for this._transforms. Converts this._transformFunc
+     * into an array of TransformMatrixes.
+     *
+     * @returns {Array<TransformMatrix>}
+     * @memberof CssTransformCalculator
+     */
+    _convertTransformFunction() {
+        const div = document.createElement('div');
+        div.style.transform = this._transformFunc;
+        document.body.appendChild(div);
+        const M = TransformMatrix.fromElement(div, this._options.safe3D);
+        document.body.removeChild(div);
+        return this._decomposeMatrix(M);
+    }
+
+    /**
+     * Helper method for this._transforms. Traverses the DOM, finds all CSS
+     * transforms, and converts them into an array of TransformMatrixes.
+     *
+     * @returns {Array<TransformMatrix>}
+     * @memberof CssTransformCalculator
+     */
+    _traverseDom() {
         let base;
         if (this._options.baseAncestor == null) {
             base = this._options.includeHostFrames ? null : document.body;
@@ -204,16 +330,8 @@ class CssTransformCalculator {
             }
 
             // fetch matrix for this element & decompose if necessary
-            const matrix = TransformMatrix.fromElement(el);
-            if (matrix.type === 'composite') {
-                if (matrix.isSkewedOrRotated) {
-                    this._scaleWarning = true;
-                }
-                const decomp = matrix.decompose();
-                matrixes.push(...decomp);
-            } else {
-                matrixes.push(matrix);
-            }
+            const matrix = TransformMatrix.fromElement(el, this._options.safe3D);
+            matrixes.push(...this._decomposeMatrix(matrix));
 
             // stop recursing if we've reached the specified `baseAncestor`
             if (el === base) { return matrixes; }
@@ -260,6 +378,28 @@ class CssTransformCalculator {
             // otherwise, we'll just traverse up the normal DOM tree.
             return recurse(parent, null, matrixes);
         }
+    }
+
+    /**
+     * Helper method for this._transforms. If the provided matrix `M` is
+     * composite, decompose it. Otherwise, just return the Array [M].
+     *
+     * @param {TransformMatrix} M
+     * @returns {Array<TransformMatrix>}
+     * @memberof CssTransformCalculator
+     */
+    _decomposeMatrix(M) {
+        const matrixes = [];
+        if (M.type === 'composite') {
+            if (M.isSkewedOrRotated) {
+                this._scaleWarning = true;
+            }
+            const decomp = M.decompose();
+            matrixes.push(...decomp);
+        } else {
+            matrixes.push(M);
+        }
+        return matrixes;
     }
 
     /**
@@ -316,7 +456,12 @@ class CssTransformCalculator {
             this.__compositeScale = TransformMatrix.identity;
         }
         if (this._scaleWarning) {
-            console.warn('It may not be possible to correctly calculate the scale of this element without taking into account other CSS transforms that have been applied.');
+            const msg = 'It may not be possible to correctly calculate the scale of this element.';
+            if (this._options.safeScale) {
+                throw new Error(msg);
+            } else {
+                console.warn(msg);
+            }
         }
         return this.__compositeScale;
     }

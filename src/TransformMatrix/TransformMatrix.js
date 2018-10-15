@@ -1,5 +1,6 @@
 import decomposeTransformation from '../decomposeTransformation/decomposeTransformation';
 import { invert, matrixVectorProduct, dotProduct } from '../matrixOperations/matrixOperations';
+import parseCss from '../parseCss/parseCss';
 
 /**
  * Represents a 2D affine transformation of one of the varieties supported by
@@ -259,7 +260,7 @@ class TransformMatrix {
 
     /**
      * Create a new TransformMatrix from a Skew X angle
-     * @param {Number} theta - rotation angle (radians)
+     * @param {Number} theta - skew angle (radians)
      * @return {TransformMatrix}
      */
     static fromSkewX(theta) {
@@ -268,11 +269,24 @@ class TransformMatrix {
 
     /**
      * Create a new TransformMatrix from a Skew Y angle
-     * @param {Number} theta - rotation angle (radians)
+     * @param {Number} theta - skew angle (radians)
      * @return {TransformMatrix}
      */
     static fromSkewY(theta) {
         return new TransformMatrix(1, Math.tan(theta), 0, 1, 0, 0);
+    }
+
+    /**
+     * Create a new TransformMatrix that skews in both X and Y dimensions
+     *
+     * @static
+     * @param {Number} thetaX - horizontal skew angle (radians)
+     * @param {Number} thetaY - vertical skew angle (radians)
+     * @returns {TransformMatrix}
+     * @memberof TransformMatrix
+     */
+    static fromSkewBoth(thetaX, thetaY) {
+        return new TransformMatrix(1, Math.tan(thetaY), Math.tan(thetaX), 1, 0, 0);
     }
 
     /**
@@ -300,9 +314,12 @@ class TransformMatrix {
      * If it does, return the 3x3 matrix (Array) that represents the
      * transform. Otherwise, return null.
      * @param {HTMLElement} el
+     * @param {boolean} [safe = false] - when `true`, throw an error if 3D
+     *   transforms are in use; otherwise, just log a warning to the console
+     *   and return the identity matrix.
      * @return {TransformMatrix|null}
      */
-    static fromElement(el) {
+    static fromElement(el, safe = false) {
         // we may be working on an element that belongs to a different window.
         // be sure to use the right window to calculate the style.
         const { getComputedStyle } = el.ownerDocument.defaultView;
@@ -313,8 +330,13 @@ class TransformMatrix {
         // browsers will represent transforms as a composite matrix like this:
         // "matrix(a, b, c, d, e, f)"
         if (str.indexOf('matrix3d') > -1) {
-            throw new Error(
-                'TransformMatrix cannot be created from an element with 3D transforms.');
+            const msg = 'TransformMatrix cannot be created from an element with 3D transforms.';
+            if (safe) {
+                throw new Error(msg);
+            } else {
+                console.warn(msg);
+                return TransformMatrix.identity();
+            }
         }
         if (str.indexOf('matrix(') !== 0) { return null; }
         const css = str.split(/[^.0-9]+/).slice(1, 7)
@@ -323,6 +345,28 @@ class TransformMatrix {
 
         return new TransformMatrix(
             css[0], css[1], css[2], css[3], css[4], css[5]);
+    }
+
+    /**
+     * Given a string representing the value of a CSS transform property,
+     * return an array of TransformMatrixes representing each individual
+     * transform function in the string.
+     *
+     * @static
+     * @param {String} funcStr
+     * @param {boolean} [safe = false] - when `true`, throw an error if 3D
+     *   transforms are in use; otherwise, just log a warning to the console
+     *   and return the identity matrix.
+     * @returns {Array<TransformMatrix>}
+     * @memberof TransformMatrix
+     */
+    static fromCss(funcStr, safe = false) {
+        const matrixes = parseCss(funcStr, safe);
+        if (matrixes.length === 0) {
+            return [TransformMatrix.identity()];
+        } else {
+            return matrixes;
+        }
     }
 }
 
