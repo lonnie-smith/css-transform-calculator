@@ -56,7 +56,7 @@ class TransformMatrix {
      * 'translate', 'rotate', 'scale', 'skewX', 'skewY', or 'identity'
      * @readonly
      * @memberof TransformMatrix
-     * @returns {'composite'|'translate'|'rotate'|'scale'|'skewX'|'skewY'|'identity'}
+     * @returns {'composite'|'translate'|'rotate'|'scale'|'skewX'|'skewY'|'skew'|'identity'}
      */
     get type() {
         if (this._type == null) {
@@ -67,26 +67,38 @@ class TransformMatrix {
 
     /**
      * Set the type of this transformation based on its matrix values.
-     * @returns {'composite'|'translate'|'rotate'|'scale'|'skewX'|'skewY'|'identity'}
+     * @returns {'composite'|'translate'|'rotate'|'scale'|'skewX'|'skewY'|'skew'|'identity'}
      * @memberof TransformMatrix
      */
     _getType() {
         const [a, b, c, d, e, f] = this._values;
         if (areOne([a, d]) && areZero([b, c, e, f])) {
             return 'identity';
-        } else if (areNotZero([e, f]) && areOne([a, d]) && areZero([b, c])) {
-            return 'translate';
-        } else if (areZero([b, c, e, f])) {
-            return 'scale';
-        } else if (areOne([a, d]) && areNotZero([c]) && areZero([b, e, f])) {
-            return 'skewX';
-        } else if (areOne([a, d]) && areNotZero([b]) && areZero([c, e, f])) {
-            return 'skewY';
-        } else if (areSinCos([a, b, c, d]) && areZero([e, f]) && a === d && (b === c * -1)) {
-            return 'rotate';
-        } else {
-            return 'composite';
         }
+        if ((areNotZero([e]) || areNotZero([f])) && areOne([a, d]) && areZero([b, c])) {
+            return 'translate';
+        }
+        if (areZero([b, c, e, f])) {
+            return 'scale';
+        }
+        if (areSinCos([a, b, c, d]) &&
+            areZero([e, f]) &&
+            areClose(a, d) &&
+            areClose(b, -1 * c) &&
+            areClose((a * a) + (b * b), 1)) {
+            return 'rotate';
+        }
+        if (areOne([a, d]) && areNotZero([c]) && areZero([b, e, f])) {
+            return 'skewX';
+        }
+        if (areOne([a, d]) && areNotZero([b]) && areZero([c, e, f])) {
+            return 'skewY';
+        }
+        if (areOne([a, d]) && areNotZero([b, c]) && areZero([e, f])) {
+            return 'skew';
+        }
+
+        return 'composite';
 
         function areZero(arr) {
             return arr.reduce(((rslt, item) => rslt && item === 0), true);
@@ -102,6 +114,12 @@ class TransformMatrix {
 
         function areSinCos(arr) {
             return arr.reduce(((rslt, item) => rslt && item >= -1 && item <= 1), true);
+        }
+
+        function areClose(a, b) {
+            const a1 = Math.round(a * 100000);
+            const b1 = Math.round(b * 100000);
+            return a1 === b1;
         }
     }
 
@@ -248,11 +266,13 @@ class TransformMatrix {
      * @return {TransformMatrix}
      */
     static fromRotate(theta) {
+        const sin = Math.sin(theta);
+        const cos = Math.cos(theta);
         return new TransformMatrix(
-            Math.cos(theta),
-            Math.sin(theta),
-            -1 * Math.sin(theta),
-            Math.cos(theta),
+            cos,
+            sin,
+            -1 * sin,
+            cos,
             0,
             0
         );

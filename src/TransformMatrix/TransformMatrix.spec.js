@@ -6,8 +6,11 @@ describe('TransformMatrix', () => {
     const scale = TransformMatrix.fromScale(6, 8);
     const skewX = TransformMatrix.fromSkewX(13);
     const skewY = TransformMatrix.fromSkewY(17);
+    const skew = TransformMatrix.fromSkewBoth(1, 2);
     const rotate = TransformMatrix.fromRotate(23);
     const translate = TransformMatrix.fromTranslation(-13, -17);
+    const translateX = TransformMatrix.fromTranslation(9, 0);
+    const translateY = TransformMatrix.fromTranslation(0, 9);
 
     it('Should correctly translate CSS vectors into 3x3 Arrays', () => {
         expect(M.cssVector).toEqual([1, 2, 3, 4, 5, 6]);
@@ -29,8 +32,8 @@ describe('TransformMatrix', () => {
 
     it('Should clone a matrix', () => {
         const M1 = M.clone();
-        expect(M1.cssVector).toEqual(M.cssVector); 
-        expect(M1.matrix).toEqual(M.matrix); 
+        expect(M1.cssVector).toEqual(M.cssVector);
+        expect(M1.matrix).toEqual(M.matrix);
     });
 
     it('Should generate identity matrixes', () => {
@@ -51,13 +54,13 @@ describe('TransformMatrix', () => {
             [0, 0, 1],
         ]);
     });
-    
+
     it('Should correctly identify identity matrixes', () => {
         const I1 = new TransformMatrix(1, 0, 0, 1, 0, 0);
         const M1 = new TransformMatrix(2, 0, 0, 1, 0, 0);
         expect(I1.isIdentity()).toBe(true);
         expect(M1.isIdentity()).toBe(false);
-    })
+    });
 
     it('Should treat a scale(1, 1) matrix as an identity matrix', () => {
         const M1 = TransformMatrix.fromScale(1, 1);
@@ -73,7 +76,7 @@ describe('TransformMatrix', () => {
             [0, 0, 1],
         ]);
     });
-    
+
     it('Should generate skewY matrixes', () => {
         expect(skewY.type).toBe('skewY');
         expect(skewY.matrix).toEqual([
@@ -81,6 +84,10 @@ describe('TransformMatrix', () => {
             [Math.tan(17), 1, 0],
             [0, 0, 1],
         ]);
+    });
+
+    it('Should generate matrixes which skew on both dimensions', () => {
+        expect(skew.type).toBe('skew');
     });
 
     it('Should generate rotation matrixes', () => {
@@ -92,13 +99,15 @@ describe('TransformMatrix', () => {
         ]);
     });
 
-    it('Should correctly interpret a handmade rotation matrix as a rotation', () => {
+    it('Should correctly classify a handmade rotation matrix', () => {
         const theta = 33;
+        const sin = Math.sin(theta);
+        const cos = Math.cos(theta);
         const M1 = new TransformMatrix(
-            Math.cos(theta),
-            Math.sin(theta),
-            -1 * Math.sin(theta),
-            Math.cos(theta),
+            cos,
+            sin,
+            -1 * sin,
+            cos,
             0,
             0
         );
@@ -112,9 +121,21 @@ describe('TransformMatrix', () => {
             [0, 1, -17],
             [0, 0, 1],
         ]);
+        expect(translateX.type).toBe('translate');
+        expect(translateX.matrix).toEqual([
+            [1, 0, 9],
+            [0, 1, 0],
+            [0, 0, 1],
+        ]);
+        expect(translateY.type).toBe('translate');
+        expect(translateY.matrix).toEqual([
+            [1, 0, 0],
+            [0, 1, 9],
+            [0, 0, 1],
+        ]);
     });
 
-    it('Should interpret a handmade composite matix as composite', () => {
+    it('Should classify a handmade composite matix', () => {
         expect(M.type).toBe('composite');
     });
 
