@@ -267,28 +267,13 @@ class CssTransformCalculator {
     get _transforms() {
         if (this.__transforms) { return this.__transforms; }
         if (this._options.fromTransform) {
-            return this._convertTransformFunction();
+            this.__transforms = TransformMatrix.fromCss(this._transformFunc);
         } else if (this._options.fromElement) {
-            return this._traverseDom();
+            this.__transforms = this._traverseDom();
         } else {
             throw new Error('Cannot perform calculations using this CssTransformCalculator; please instantiate via CssTransformCalculator.fromElement or CssTransformCalculator.fromTransform');
         }
-    }
-
-    /**
-     * Helper method for this._transforms. Converts this._transformFunc
-     * into an array of TransformMatrixes.
-     *
-     * @returns {Array<TransformMatrix>}
-     * @memberof CssTransformCalculator
-     */
-    _convertTransformFunction() {
-        const div = document.createElement('div');
-        div.style.transform = this._transformFunc;
-        document.body.appendChild(div);
-        const M = TransformMatrix.fromElement(div, this._options.safe3D);
-        document.body.removeChild(div);
-        return this._decomposeMatrix(M);
+        return this.__transforms;
     }
 
     /**
