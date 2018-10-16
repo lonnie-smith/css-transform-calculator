@@ -110,7 +110,7 @@ coordinate space represented by a CssTransformCalculator.
 
 - **x** {Number}
 - **y** {Number}
-- **returns** {x: Number, y: Number}
+- **returns** {{ x: Number, y: Number }}
 
 ##### Example
 
@@ -157,7 +157,7 @@ CssTransformCalculator back to the untransformed/base space.
 
 - **x** {Number}
 - **y** {Number}
-- **returns** {x: Number, y: Number}
+- **returns** {{ x: Number, y: Number }}
 
 ```js
 // continuing the example for `transformPoint`
