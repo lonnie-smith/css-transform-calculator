@@ -103,10 +103,13 @@ const calc = CssTransformCalculator.fromCss(txfrm, opts);
 
 ### Instance methods
 
-#### transformPoint(x, y)
+#### `transformPoint(x, y)` and `untransformPoint(x, y)`
 
-Map a point (x, y) from the base (untransformed) coordinate space to the
-coordinate space represented by a CssTransformCalculator.
+`transformPoint` maps a point (x, y) from the base (untransformed) coordinate space to the coordinate space represented by a CssTransformCalculator.
+
+`untransformPoint(x, y)` does the opposite, mapping a point(x, y) from the
+transformed coordinate space represented by CssTransformCalculator back to the
+ untransformed/base space.
 
 - **x** {Number}
 - **y** {Number}
@@ -148,19 +151,6 @@ const point = calc.transformPoint(offsetX, offsetY);
 // point.x == 14.50278115410201, point.y == 17.019675049666006
 // this is the "offset" of the top left corner of #target, relative to
 // #container, after the transform.
-```
-
-### untransformPoint(x, y)
-
-Map a point(x, y) from the transformed coordinate space represented by
-CssTransformCalculator back to the untransformed/base space.
-
-- **x** {Number}
-- **y** {Number}
-- **returns** {{ x: Number, y: Number }}
-
-```js
-// continuing the example for `transformPoint`
 
 const basePoint = calc.untransformPoint(point.x, point.y);
 
@@ -170,12 +160,195 @@ const basePoint = calc.untransformPoint(point.x, point.y);
 // sense.
 ```
 
-### getTransformedBoundingClientRect(element)
+#### `getTransformedBoundingClientRect(element)` and `getUntransformedBoundingClientRect(element)`
 
-### getUntransformedBoundingClientRect(element)
+`getTransformedBoundingClientRect(element)` maps the coordinates for an
+element’s bounding ClientRect to a transformed space.
 
-### scalePoint(x, y)
+`getUntransformedBoundingClientRect(element)` does the opposite, mapping the
+coordinates for an element’s ClientRect back to the untransformed space.
 
-### unscalePoint(x, y)
+- **element** {HTMLElement} - (optional) fetch the untransformed ClientRect coordinates for this element. Note: `element` may be any element attached to the DOM. If `element` is not provided and the calculator has been instantiated using a target element, coordinates will be calculated for the ClientRect of that target element. If `element` is not provided and the calculator was instantiated via `CssTransformCalculator.fromCss()`, null coordinates will be returned.
+- **returns** {{ left: Number|null, top: Number|null, right: Number|null, bottom: Number|null, width: Number|null, height: Number|null }}
+
+Notes: The DOM method `element.getBoundingClientRect()` will return coordinates
+for where the element is currently placed relative to the viewport (that is, it
+takes any currently-applied CSS transforms into account). These two methods are
+convenient when you need to know what an element’s bounding ClientRect would
+be before or after transforms are applied—for example, when you are moving an
+element from one part of the DOM tree to another.
+
+##### Example
+
+```html
+<!-- markup -->
+
+<!-- We're going to be moving #moveMe from one container to the other. -->
+<div id="container1" style="position: absolute; transform: translate(50%, 50%) scale(1.25);">
+    <div id="moveMe">Item</div>
+</div>
+
+<div id="container2">
+</div>
+```
+
+```js
+// Suppose users will be able to drag #moveMe from one container to the other.
+// You'll be manipulating the DOM (removing #moveMe from one container and
+// appending it to the other) when the drag ends—which will either apply or
+// remove the transforms applied to #container1.
+//
+// But while the drag is in progress, you’ll need to adust the position and size
+// of #dragMe to match its eventual destination. To do this, you will need to
+// know the dimensions and location of #moveMe when you remove the transforms.
+
+const container1 = document.getElementById('container1');
+const container2 = document.getElementById('container2');
+const moveMe = document.getElementById('moveMe');
+const calc = CssTransformCalculator.fromElement(container1);
+let srcRect;
+let destRect;
+
+// ...
+
+// moving from #container1 to #container2
+srcRect = moveMe.getBoundingClientRect();
+destRect = calc.getUntransformedBoundingClientRect(moveMe);
+
+// ... perform adjustments while dragging
+
+// Move the element within the DOM
+container1.removeChild(moveMe);
+container2.appendChild(moveMe);
+
+// ...
+
+// moving from #container2 back to #container1
+srcRect = moveMe.getBoundingClientRect();
+destRect = calc.getTransformedBoundingClientRect(moveMe);
+
+// ... perform adjustments while dragging, then move element in the DOM again.
+```
+
+#### `scalePoint(x, y)` and `unscalePoint(x, y)`
+
+```html
+<!-- markup -->
+<button data-zoomFrame-zoomIn
+    data-zoomFrame-controls="zoom-frame-1">
+    Zoom In
+</button>
+<button data-zoomFrame-zoomOut
+    data-zoomFrame-controls="zoom-frame-1">
+    Zoom Out
+</button>
+
+<div data-tileSet
+    class="tileSet">
+
+    <div class="tileSet__controls">
+        <button data-tileSet-scrollDown
+            class="tileSet__controls__button">
+            Scroll Down
+        </button>
+        <button data-tileSet-scrollUp
+            class="tileSet__controls__button">
+            Scroll Down
+        </button>
+    </div>
+
+    <div data-tileSet-slider
+        class="tileSet__tiles">
+
+        <div data-zoomFrame-frame="zoom-frame-1">
+            <div data-tileSet-tile class="tileSet__tiles__tile"></div>
+            <div data-tileSet-tile class="tileSet__tiles__tile"></div>
+            <div data-tileSet-tile class="tileSet__tiles__tile"></div>
+            <div data-tileSet-tile class="tileSet__tiles__tile"></div>
+            <div data-tileSet-tile class="tileSet__tiles__tile"></div>
+        </div> <!-- /zoomFrame-frame -->
+
+    </div> <!-- /tileSet-slider -->
+
+</div> <!-- /tileSet -->
+```
+
+```js
+class ZoomFrame {
+    constructor() {
+        this.zoomFrame = document.querySelector(['data-zoomFrame-frame']);
+        this.factor = 1;
+
+        const btnZoomIn = document.querySelector(['data-zoomFrame-zoomIn']);
+        btnZoomIn.addEventListener('click', () => this.increaseZoom());
+
+        const btnZoomOut = document.querySelector(['data-zoomFrame-zoomOut']);
+        btnZoomOut.addEventListener('click', () => this.decreaseZoom());
+    }
+
+    increaseZoom() {
+        this.factor = this.factor * 1.25;
+        this.setZoom();
+    }
+
+    decreaseZoom() {
+        this.factor = this.factor / 1.25;
+        this.setZoom();
+    }
+
+    setZoom() {
+        this.zoomFrame.transform = `scale(${this.factor})`;
+    }
+}
+
+class TileSet() {
+    constructor() {
+        this.currentTileIdx = 1;
+        this.element = document.querySelector(['data-tileSet']);
+        this.slider = this.element.querySelector(['data-tileSet-slider']);
+        this.tiles = this.slider.querySelectorAll(['data-tileSet-tile']);
+
+        const btnDown = this.element.querySelector(['data-tileSet-scrollDown']);
+        btnDown.addEventListener('click', () => this.scrollDown());
+        const btnUp = this.element.querySelector(['data-tileSet-scrollUp']);
+        btnUp.addEventListener('click', () => this.scrollUp());
+    }
+
+    scrollUp() {
+        if (this.currentTileIdx < this.tiles.length - 1) {
+            this.currenTileIdx++;
+            this.doScroll();
+        }
+    }
+
+    scrollDown() {
+        if (this.currentTileIdx > 0) {
+            this.currentTileIdx--;
+            this.doScroll();
+        }
+    }
+
+    doScroll() {
+        const nextTile = this.tiles[this.currentTileIdx];
+        const calc = CssTransformCalculator.fromElement(nextTile);
+        const baseTop = nextTile.offsetTop;
+        const scaledPoint = calc.scalePoint(0, baseTop);
+        const newOffset = scaledPoint.y;
+
+    }
+}
+
+const zoom = new ZoomFrame();
+const tileSet = new TileSet();
+```
+
+**Discussion:** here we have two reusable components, ZoomFrame and TileSet,
+which page authors are allowed to compose however they like. (For the sake of simplicity, this example shows one ZoomFrame used as a container for the tiles in TileSet, but with a little refactoring, we could generalize the ZoomFrame so that there could be multiple parts of the page zoomed at different settings.)
+
+In order to move the tiles up and down the correct distance, TileSet needs to take into account any transforms that may have been applied between an individual tile and its tile container.
+
+We’d like to avoid sharing state between TileSets and ZoomFrames, because we don’t know in advance how page authors will compose these two components: page authors could be using more than one ZoomFrame inside a TileSet, or might not use zoom frames at all.
+
+**Discussion:** this example is a little contrived, since it's easy to keep track of how much the zoom frame is scaled. But suppose this was a snippet of the DOM produced dynamically by a component-oriented framework, where (a) the internal state of the zoom frame component is not available globally, or (b) developers of the tile set component don't know in advance whether zoom frame(s) will be used inside the tile set. In that case, it would be useful to have an easy way to dynamically inspect the transforms applied inside the tile set when moving tiles around
 
 ## Contributing

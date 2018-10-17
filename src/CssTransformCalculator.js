@@ -195,17 +195,34 @@ class CssTransformCalculator {
      * would have been `before` this element (and any of its ancestors) were
      * transformed, this method will tell you.
      *
-     * @returns {{width: Number, height: Number, top: Number, right: Number, bottom: Number, left: Number}}
+     * @param {HTMLElement} [element]
+     * @returns {{width: Number|null, height: Number|null, top: Number|null, right: Number|null, bottom: Number|null, left: Number|null}}
      * @memberof CssTransformCalculator
      */
     /* eslint-enable max-len */
-    getUntransformedBoundingClientRect() {
-        const rect = this._el.getBoundingClientRect();
+    getUntransformedBoundingClientRect(element) {
+        let rect;
+        if (element) {
+            rect = element.getBoundingClientRect &&
+                element.getBoundingClientRect();
+        } else if (this._el) {
+            rect = this._el.getBoundingClientRect();
+        }
         const txfrm = this._compositeInverse;
         return CssTransformCalculator._transformRect(rect, txfrm);
     }
 
     static _transformRect(rect, txfrm) {
+        if (rect == null) {
+            return {
+                width: null,
+                height: null,
+                top: null,
+                right: null,
+                bottom: null,
+                left: null,
+            };
+        }
         const origin = txfrm.transformPoint(rect.left, rect.top);
         const edge = txfrm.transformPoint(rect.right, rect.bottom);
         return {
